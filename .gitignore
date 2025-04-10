@@ -1,0 +1,11 @@
+*.pyc
+*.tmp
+*.log
+*.env
+__pycache__/
+/media/menu.psd
+test.py
+.venv/
+
+.DS_Store
+Thumbs.db
