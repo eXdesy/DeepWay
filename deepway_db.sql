@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS `groups` (
     FOREIGN KEY (owner_id) REFERENCES users(telegram_id)
 );
 
-CREATE TABLE payments (
+CREATE TABLE IF NOT EXISTS `payments` (
     `payment_id` INT AUTO_INCREMENT PRIMARY KEY,
     `buyer_id` BIGINT NOT NULL,
     `owner_id` BIGINT NOT NULL,
