@@ -102,9 +102,20 @@ async def menu_(entity, menu_type=None):
         media_data = result.current_language.userMenuMedia
         username, subscription_count = count_user_subscriptions(telegram_id)
         if username:
+            verification = verify_user_data(telegram_id, True, 'verification')
+            verification_status = result.current_language.isVerifiedText if verification == True else result.current_language.isNotVerifiedText
+
+            if verify_user_boost(telegram_id):
+                boost_date = fetch_boost_expire_date(telegram_id)
+                boost_status = result.current_language.isBoostedText.format(boost_date=boost_date.strftime('%Y-%m-%d'))
+            else:
+                boost_status = result.current_language.isNotBoostedText
+
             caption = result.current_language.accountText.format(
                 username=username,
-                subscription_count=subscription_count
+                verification_status=verification_status,
+                subscription_count=subscription_count,
+                boost_status=boost_status
             )
         else:
             caption = result.current_language.noAccountText
@@ -141,7 +152,7 @@ async def menu_(entity, menu_type=None):
             InlineKeyboardButton(text=result.current_language.channelsButton, callback_data='user_media_channels'),
             InlineKeyboardButton(text=result.current_language.groupsButton, callback_data='user_media_groups')
         )
-        markup_inline.row(InlineKeyboardButton(text='BOOST MEDIA', callback_data='boost'))
+        markup_inline.row(InlineKeyboardButton(text=result.current_language.boostButton, callback_data='boost'))
 
     elif menu_type == 'subscriptions' and fetch_user_token(telegram_id):
         update_log_states_data(telegram_id, 'menu_user', 'current_state')
@@ -175,9 +186,9 @@ async def boost(callback_query: types.CallbackQuery):
     markup_inline.row(
         InlineKeyboardButton(text=result.current_language.checkPaymentButton, callback_data=f'check_payment_boost'))
 
-    await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.supportMedia,
-                                    result.current_language.supportText, current_language=result.current_language,
-                                    back_button=True, edit_message=True)
+    await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.boostMedia,
+                                    result.current_language.boostText, current_language=result.current_language,
+                                    back_button=True, edit_message=True, markup_inline=None)
 
 @dp.callback_query_handler(Text(startswith='support_'))
 async def support_(callback_query: types.CallbackQuery):
@@ -201,10 +212,21 @@ async def report(callback_query: types.CallbackQuery):
     update_log_states_data(telegram_id, result.message_id, 'current_message_id')
     update_log_states_data(telegram_id, 'media_', 'current_state')
 
+    media_id = fetch_log_states_data(telegram_id, 'current_media_id')
+    media_type = fetch_log_states_data(telegram_id, 'current_media_type')
+
+    types = result.current_language.channelType if media_type == 'channels' else result.current_language.groupType
+    chat_info = await bot.get_chat(media_id)
+    title = chat_info.title
+
+    caption = result.current_language.reportText.format(
+        channel_name=title,
+        media_type=types
+    )
+
     update_log_states_data(telegram_id, 'report', 'temporal_state')
-    await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.supportMedia,
-                                    result.current_language.supportText, current_language=result.current_language,
-                                    back_button=True, edit_message=True)
+    await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.reportMedia, caption,
+                                    current_language=result.current_language, back_button=True, edit_message=True)
 
 @dp.callback_query_handler(Text(equals='restore_account'))
 async def restore_account(callback_query: types.CallbackQuery):
@@ -287,9 +309,13 @@ async def subscriptions_list(entity):
 
     markup_inline = InlineKeyboardMarkup(row_width=2)
     if fetch_user_token(telegram_id):
+
         if result.current_state == 'menu_media':
             update_log_states_data(telegram_id, 'media_', 'current_state')
-            await entity.answer(result.current_language.alreadyJoinedText, show_alert=True)
+            media_type = fetch_log_states_data(telegram_id, 'current_media_type')
+            types = result.current_language.channelType if media_type == 'channels' else result.current_language.groupType
+            caption = result.current_language.alreadyJoinedText.format(media_type=types)
+            await entity.answer(caption, show_alert=True)
         if result.current_state == 'media_':
             update_log_states_data(telegram_id, 'media_', 'current_state')
 
@@ -352,8 +378,11 @@ async def handle_login(message: types.Message):
     if login_state == 'support':
         support_description = message.text
         create_support_request(telegram_id, username, support_description, datetime.now())
+        support_id = fetch_support_id(telegram_id)
         media_data = result.current_language.supportMedia
-        caption = result.current_language.supportAnswerText
+        caption = result.current_language.supportAnswerText.format(
+            support_id=support_id
+        )
 
         update_log_states_data(telegram_id, None, 'temporal_state')
 
@@ -361,8 +390,8 @@ async def handle_login(message: types.Message):
         report_description = message.text
         create_media_report(telegram_id, username, result.current_media_id, report_description,
                             result.current_media_type, datetime.now())
-        media_data = result.current_language.supportMedia
-        caption = result.current_language.supportAnswerText
+        media_data = result.current_language.reportMedia
+        caption = result.current_language.reportAnswerText
 
         update_log_states_data(telegram_id, None, 'temporal_state')
 
@@ -473,8 +502,8 @@ async def user_media_(callback_query: types.CallbackQuery, media_type=None):
                 InlineKeyboardButton(result.current_language.addMediaButton, callback_data='create_user_media_')
             )
         else:
-            markup_inline.row(
-                InlineKeyboardButton(result.current_language.addMediaButton, callback_data='create_user_media_'))
+            await create_user_media_(callback_query)
+            return
 
         await display_media(callback_query, markup_inline, media)
     else:
@@ -632,7 +661,7 @@ async def display_media(entity, markup_inline=None, medias=None):
                 else:
                     markup_inline.add(
                         InlineKeyboardButton(text=result.current_language.buyButton, callback_data='payment'))
-            markup_inline.row(InlineKeyboardButton(text='⚠️ REPORT', callback_data=f'report'))
+            markup_inline.row(InlineKeyboardButton(text=result.current_language.reportButton, callback_data=f'report'))
 
         markup_inline.row(InlineKeyboardButton(text=result.current_language.backButton, callback_data='back'))
         if media[5]:
@@ -722,7 +751,13 @@ async def delete_media(callback_query: types.CallbackQuery):
             await user_media_(callback_query, result.current_media_type)
         else:
             await media_(callback_query, result.current_media_type)
-        await callback_query.answer(result.current_language.deletedChannelText, show_alert=True)
+
+        media_type = fetch_log_states_data(telegram_id, 'current_media_type')
+        types = result.current_language.channelType if media_type == 'channels' else result.current_language.groupType
+        caption = result.current_language.deleteMediaText.format(
+            media_type=types
+        )
+        await callback_query.answer(caption, show_alert=True)
     else:
         await start(callback_query)
 
@@ -730,15 +765,21 @@ async def delete_media(callback_query: types.CallbackQuery):
 async def create_user_media_(callback_query: types.CallbackQuery):
     telegram_id = callback_query.from_user.id
     result = await handle_isinstance(callback_query, telegram_id)
-    update_log_states_data(telegram_id, 'user_media_', 'current_state')
+    update_log_states_data(telegram_id, 'menu_user_media', 'current_state')
     update_log_states_data(telegram_id, result.message_id, 'current_message_id')
     add_media_data(telegram_id)
 
     if fetch_user_token(telegram_id):
+        media_type = fetch_log_states_data(telegram_id, 'current_media_type')
+        types = result.current_language.channelType if media_type == 'channels' else result.current_language.groupType
+
         user_chats = fetch_user_unregistered_media(telegram_id, result.current_media_type)
         if not user_chats:
+            caption = result.current_language.mediaNoChatsText.format (
+                media_type= types
+            )
             await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.errorMedia,
-                                            result.current_language.mediaNoChatsText,
+                                            caption,
                                             current_language=result.current_language, back_button=True,
                                             edit_message=True)
         else:
@@ -747,12 +788,14 @@ async def create_user_media_(callback_query: types.CallbackQuery):
                 chat_info = await bot.get_chat(user_media_id[0])
                 title = chat_info.title
                 update_log_states_data(telegram_id, user_media_id[0], 'current_media_id')
-                buttons.append(InlineKeyboardButton(text=title, callback_data=f'handle_media_name'))
+                buttons.append(InlineKeyboardButton(text=title, callback_data='handle_media_name'))
             markup_inline = InlineKeyboardMarkup(inline_keyboard=[buttons])
+            caption = result.current_language.mediaSelectionText.format (
+                media_type= types
+            )
 
             await edit_entity_message_media(result.chat_id, result.message_id,
-                                            result.current_language.mediaSelectionMedia,
-                                            result.current_language.mediaSelectionText,
+                                            result.current_language.mediaSelectionMedia, caption,
                                             current_language=result.current_language,
                                             markup_inline=markup_inline, back_button=True, edit_message=True)
     else:
@@ -816,21 +859,20 @@ async def edite_(callback_query: types.CallbackQuery):
         caption = result.current_language.addPhotoText
         media_data = result.current_language.addPhotoMedia
     elif edite_key == 'category':
-        caption = result.current_language.addCategoryText
-        media_data = result.current_language.addCategoryMedia
-        await handle_media_category(callback_query, caption, media_data, 'update_user_media_')
+        await handle_media_category(callback_query, 'update_user_media_')
         return
     elif edite_key == 'price':
         await MediaStates.waiting_for_planes.set()
         await handle_media_planes(callback_query)
         return
     else:
-        caption = result.current_language.addMediaErrorText
+        media_type = fetch_log_states_data(telegram_id, 'current_media_type')
+        types = result.current_language.channelType if media_type == 'channels' else result.current_language.groupType
+        caption = result.current_language.addMediaErrorText.format(media_type=types)
         media_data = result.current_language.errorMedia
 
-    await edit_entity_message_media(result.chat_id, result.message_id, media_data, caption,
-                                    current_language=result.current_language,
-                                    back_button=True, edit_message=True)
+    await edit_entity_message_media(result.chat_id, result.message_id, media_data, caption, back_button=True,
+                                    edit_message=True, current_language=result.current_language)
 
 @dp.callback_query_handler(Text(equals='handle_media_name'))
 async def handle_media_name(callback_query: types.CallbackQuery):
@@ -839,15 +881,20 @@ async def handle_media_name(callback_query: types.CallbackQuery):
 
     chat_info = await bot.get_chat(result.current_media_id)
     title = chat_info.title
-    if result.current_state == 'user_media_':
+    if result.current_state == 'menu_user_media':
         update_log_states_data(telegram_id, 'create_user_media_', 'current_state')
         add_media[telegram_id]['media_id'] = result.current_media_id
         add_media[telegram_id]['name'] = title
+
+        media_type = fetch_log_states_data(telegram_id, 'current_media_type')
+        types = result.current_language.channelType if media_type == 'channels' else result.current_language.groupType
+        caption = result.current_language.addDescriptionText.format(
+            media_type=types
+        )
         await MediaStates.waiting_for_description.set()
         await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.addDescriptionMedia,
-                                        result.current_language.addDescriptionText,
-                                        current_language=result.current_language,
-                                        back_button=True, edit_message=True)
+                                        caption, current_language=result.current_language, back_button=True,
+                                        edit_message=True)
     if result.current_state == 'update_user_media_':
         update_user_media_data(telegram_id, result.current_media_type_id, result.current_media_type, 'name', title)
         await update_user_media_(callback_query)
@@ -858,10 +905,12 @@ async def handle_media_description(message: types.Message, state: FSMContext):
     telegram_id = message.from_user.id
     result = await handle_isinstance(message, telegram_id)
 
+    media_type = fetch_log_states_data(telegram_id, 'current_media_type')
+    types = result.current_language.channelType if media_type == 'channels' else result.current_language.groupType
     if not message.text.strip():
+        caption = result.current_language.descriptionEmptyErrorText.format(media_type=types)
         await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.errorMedia,
-                                        result.current_language.descriptionEmptyErrorText,
-                                        current_language=result.current_language,
+                                        caption, current_language=result.current_language,
                                         back_button=True, edit_message=True, delete_message=True,
                                         fixed_message_id=result.current_message_id)
     elif len(message.text) > 250:
@@ -873,11 +922,12 @@ async def handle_media_description(message: types.Message, state: FSMContext):
     else:
         if result.current_state == 'create_user_media_':
             add_media[telegram_id]['description'] = message.text
+            caption = result.current_language.addPhotoText.format(media_type=types)
             await MediaStates.waiting_for_photo.set()
             await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.addPhotoMedia,
-                                            result.current_language.addPhotoText,
-                                            current_language=result.current_language,
-                                            back_button=True, edit_message=True, delete_message=True)
+                                            caption, current_language=result.current_language,
+                                            back_button=True, edit_message=True, delete_message=True,
+                                            fixed_message_id=result.current_message_id)
         if result.current_state == 'update_user_media_':
             update_user_media_data(telegram_id, result.current_media_type_id, result.current_media_type, 'description',
                                    message.text)
@@ -908,9 +958,11 @@ async def handle_media_photo(message: types.Message, state: FSMContext):
             await state.finish()
 
     else:
+        media_type = fetch_log_states_data(telegram_id, 'current_media_type')
+        types = result.current_language.channelType if media_type == 'channels' else result.current_language.groupType
+        caption = result.current_language.invalidPhotoErrorText.format(media_type=types)
         await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.errorMedia,
-                                        result.current_language.invalidPhotoErrorText,
-                                        current_language=result.current_language,
+                                        caption, current_language=result.current_language,
                                         back_button=True, edit_message=True, fixed_message_id=result.current_message_id)
 
 @dp.message_handler(state=MediaStates.waiting_for_planes)
@@ -926,19 +978,25 @@ async def handle_media_planes(entity):
         InlineKeyboardButton(text=result.current_language.yearPaymentPlanButton, callback_data='handle_plan_price:plan12'),
         InlineKeyboardButton(text=result.current_language.foreverPaymentPlanButton, callback_data='handle_plan_price:plan')
     )
+
+    media_type = fetch_log_states_data(telegram_id, 'current_media_type')
+    types = result.current_language.channelType if media_type == 'channels' else result.current_language.groupType
+    caption = result.current_language.addPlanText.format(media_type=types)
+
     if result.current_state == 'create_user_media_' or result.current_state == 'handle_add_media_planes':
+        delete_message = True if not result.current_state == 'handle_add_media_planes' else None
         update_log_states_data(telegram_id, 'create_user_media_', 'current_state')
         markup_inline.add(
-            InlineKeyboardButton(text=result.current_language.nextButton, callback_data='handle_plan_price:next'))
+            InlineKeyboardButton(text=result.current_language.continueButton, callback_data='handle_plan_price:next'))
         await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.addPlanMedia,
-                                        result.current_language.addPlanText, markup_inline,
-                                        current_language=result.current_language, delete_message=True,
+                                        caption, markup_inline,
+                                        current_language=result.current_language, delete_message=delete_message,
                                         back_button=True, edit_message=True, fixed_message_id=result.current_message_id)
 
     if result.current_state == 'update_user_media_' or result.current_state == 'handle_update_media_planes':
         update_log_states_data(telegram_id, 'update_user_media_', 'current_state')
         await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.addPlanMedia,
-                                        result.current_language.addPlanText, markup_inline=markup_inline,
+                                        caption, markup_inline=markup_inline,
                                         current_language=result.current_language, back_button=True, edit_message=True)
 
 @dp.callback_query_handler(lambda c: c.data and c.data.startswith('handle_plan_price:'), state='*')
@@ -950,19 +1008,21 @@ async def handle_plan_price(callback_query: types.CallbackQuery, state: FSMConte
     if selected == 'next':
         update_log_states_data(telegram_id, 'create_user_media_', 'current_state')
         await state.finish()
-        await handle_media_category(callback_query, result.current_language.addCategoryText,
-                                    result.current_language.addCategoryMedia, 'user_media_')
+        await handle_media_category(callback_query, 'user_media_')
     else:
         if result.current_state == 'create_user_media_':
             update_log_states_data(telegram_id, 'handle_add_media_planes', 'current_state')
         if result.current_state == 'update_user_media_':
             update_log_states_data(telegram_id, 'handle_update_media_planes', 'current_state')
         await state.update_data(selected_plan=selected)
+        media_type = fetch_log_states_data(telegram_id, 'current_media_type')
+        types = result.current_language.channelType if media_type == 'channels' else result.current_language.groupType
         caption = result.current_language.addPriceText.format(
-            plan_text=result.current_language.plan_text.get(selected, selected))
+            media_type=types,
+            plan_text=result.current_language.plan_text.get(selected, selected)
+        )
         await MediaStates.waiting_for_price.set()
-        await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.addPriceMedia,
-                                        caption,
+        await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.addPriceMedia, caption,
                                         current_language=result.current_language, back_button=True, edit_message=True)
 
 @dp.message_handler(state=MediaStates.waiting_for_price, content_types=types.ContentType.TEXT)
@@ -970,10 +1030,13 @@ async def handle_media_price(message: types.Message, state: FSMContext):
     telegram_id = message.from_user.id
     result = await handle_isinstance(message, telegram_id)
 
+    media_type = fetch_log_states_data(telegram_id, 'current_media_type')
+    types = result.current_language.channelType if media_type == 'channels' else result.current_language.groupType
     if not message.text.strip():
+        caption = result.current_language.priceEmptyErrorText.format(media_type=types)
         await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.errorMedia,
-                                        result.current_language.priceEmptyErrorText, delete_message=True,
-                                        current_language=result.current_language, back_button=True, edit_message=True)
+                                        caption, delete_message=True, current_language=result.current_language,
+                                        back_button=True, edit_message=True)
     elif not message.text.isdigit():
         await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.errorMedia,
                                         result.current_language.invalidPriceErrorText, delete_message=True,
@@ -987,19 +1050,16 @@ async def handle_media_price(message: types.Message, state: FSMContext):
         if result.current_state == 'update_user_media_':
             update_user_media_data(telegram_id, result.current_media_type_id, result.current_media_type,
                                    f'{selected_plan}_price', message.text)
-            await bot.delete_message(chat_id=result.chat_id, message_id=message.message_id)
 
+        await bot.delete_message(chat_id=result.chat_id, message_id=message.message_id)
         await MediaStates.waiting_for_planes.set()
         await handle_media_planes(message)
 
 @dp.callback_query_handler(Text(equals='category'))
 async def category(callback_query: types.CallbackQuery):
-    telegram_id = callback_query.from_user.id
-    result = await handle_isinstance(callback_query, telegram_id)
-    await handle_media_category(callback_query, result.current_language.addCategoryText,
-                                result.current_language.addCategoryMedia, 'media_')
+    await handle_media_category(callback_query, 'media_')
 
-async def handle_media_category(entity, caption, media_data, return_menu=None):
+async def handle_media_category(entity, return_menu=None):
     telegram_id = entity.from_user.id
     result = await handle_isinstance(entity, telegram_id)
     if return_menu:
@@ -1010,7 +1070,11 @@ async def handle_media_category(entity, caption, media_data, return_menu=None):
     for index, category in enumerate(result.current_language.categories.keys(), start=1):
         markup_inline.add(InlineKeyboardButton(text=category, callback_data=f'handle_media_subcategory_{index}'))
 
-    await edit_entity_message_media(result.chat_id, result.message_id, media_data, caption, markup_inline=markup_inline,
+    media_type = fetch_log_states_data(telegram_id, 'current_media_type')
+    types = result.current_language.channelType if media_type == 'channels' else result.current_language.groupType
+    caption = result.current_language.addCategoryText.format(media_type=types)
+
+    await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.addCategoryMedia, caption, markup_inline=markup_inline,
                                     current_language=result.current_language, back_button=True, edit_message=True)
 
 @dp.callback_query_handler(Text(startswith='handle_media_subcategory_'))
@@ -1030,9 +1094,13 @@ async def handle_media_subcategory_(callback_query: types.CallbackQuery):
         for index, subcategory in enumerate(result.current_language.categories[selected_category], start=1):
             markup_inline.add(InlineKeyboardButton(text=subcategory, callback_data=f'handle_media_create_{index}'))
 
+        media_type = fetch_log_states_data(telegram_id, 'current_media_type')
+        types = result.current_language.channelType if media_type == 'channels' else result.current_language.groupType
+        caption = result.current_language.addSubcategoryText.format(media_type=types)
+
         await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.addSubcategoryMedia,
-                                        result.current_language.addSubcategoryText, markup_inline=markup_inline,
-                                        current_language=result.current_language, back_button=True, edit_message=True)
+                                        caption, markup_inline=markup_inline, current_language=result.current_language,
+                                        back_button=True, edit_message=True)
     else:
         await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.errorMedia,
                                         result.current_language.invalidCategoryText,
@@ -1066,10 +1134,12 @@ async def handle_media_create_(callback_query: types.CallbackQuery):
             await update_user_media_(callback_query)
             update_log_states_data(telegram_id, None, 'temporal_state')
     else:
+        media_type = fetch_log_states_data(telegram_id, 'current_media_type')
+        types = result.current_language.channelType if media_type == 'channels' else result.current_language.groupType
+        caption = result.current_language.addMediaErrorText.format(media_type=types)
         await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.errorMedia,
-                                        result.current_language.addMediaErrorText,
-                                        current_language=result.current_language,
-                                        back_button=True, edit_message=True)
+                                        caption, current_language=result.current_language, back_button=True,
+                                        edit_message=True)
 
 ############################## HANDLE PAYMENT ##############################
 @dp.callback_query_handler(Text(equals='payment'))
@@ -1247,9 +1317,13 @@ async def back(callback_query: types.CallbackQuery, state: FSMContext):
     elif result.current_state == 'handle_media_planes':
         await handle_media_planes(callback_query)
     elif result.current_state == 'handle_media_category':
-        await handle_media_category(callback_query, result.current_language.addCategoryText,
-                                    result.current_language.addCategoryMedia,
-                                    result.temporal_state)
+        await handle_media_category(callback_query, result.temporal_state)
+    elif result.current_state == 'handle_update_media_planes':
+        await MediaStates.waiting_for_planes.set()
+        await handle_media_planes(callback_query)
+    elif result.current_state == 'handle_add_media_planes':
+        await MediaStates.waiting_for_planes.set()
+        await handle_media_planes(callback_query)
 
     elif result.current_state == f'payment_{result.current_media_id}':
         callback_query.data = f'payment_{result.current_media_id}'

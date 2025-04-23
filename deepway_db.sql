@@ -1,5 +1,5 @@
-CREATE DATABASE IF NOT EXISTS `theboys_db`;
-USE `theboys_db`;
+CREATE DATABASE IF NOT EXISTS `deepway_db`;
+USE `deepway_db`;
 
 CREATE TABLE IF NOT EXISTS `users` (
     `user_id` INT AUTO_INCREMENT PRIMARY KEY,

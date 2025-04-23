@@ -102,6 +102,16 @@ def create_boosts(buyer_id, subscription_date, expire_date, boost_status):
     db_connection.commit()
     return
 
+def verify_user_boost(buyer_id):
+    cursor.execute('SELECT 1 FROM boosts WHERE buyer_id = %s ORDER BY expire_date DESC LIMIT 1', (buyer_id,))
+    result = cursor.fetchone()
+    return result[0] if result else False
+
+def fetch_boost_expire_date(buyer_id):
+    cursor.execute('SELECT expire_date FROM boosts WHERE buyer_id = %s ORDER BY expire_date DESC LIMIT 1', (buyer_id,))
+    result = cursor.fetchone()
+    return result[0] if result else None
+
 # log_users
 def create_log_users(current_telegram_id, telegram_id, enter_status, action, logged_data):
     cursor.execute('INSERT INTO log_users (current_telegram_id, telegram_id, enter_status, action, logged_data) '
@@ -269,6 +279,12 @@ def create_support_request(telegram_id, username, description, created_date):
                    (telegram_id, username, description, 'PROCESSING', created_date))
     db_connection.commit()
     return
+
+def fetch_support_id(telegram_id):
+    cursor.execute('SELECT support_id FROM `supports` WHERE telegram_id = %s ORDER BY support_id DESC LIMIT 1',
+                   (telegram_id,))
+    result = cursor.fetchone()
+    return result[0] if result else 0
 
 # Recommendations
 def fetch_user_subscription_category(telegram_id, media_type):

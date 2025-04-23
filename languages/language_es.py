@@ -1,8 +1,10 @@
 backButton = '◀️ VOLVER'
+continueButton = 'CONTINUAR️'
 loginButton = '🔑 INICIAR SESIÓN'
 registerButton = '📝 REGISTRARSE'
 restoreAccountButton = '🔄 RESTAURAR CUENTA'
 supportButton = '📞 SOPORTE'
+reportButton = '⚠️ QUEJA'
 accountButton = '👤 MI CUENTA'
 updatePasswordButton = '🔄 CAMBIAR CONTRASEÑA'
 updateLanguageButton = '🌍 CAMBIAR IDIOMA'
@@ -36,6 +38,7 @@ updateCategoryButton = '📂 ACTUALIZAR CATEGORÍA'
 updatePriceButton = '💰 ACTUALIZAR PRECIO'
 foreverButton = 'PARA SIEMPRE'
 checkPaymentButton = 'VERIFICAR PAGO'
+boostButton = 'MEJORAR CUENTA'
 
 paymentAcceptedText = 'Pago confirmado'
 mainMenuText = (
@@ -57,7 +60,7 @@ loginText = (
 )
 registerText = (
     '<b>📝 Registrarse</b>\n'
-    '¿Eres nuevo aquí? Envía una contraseña para crear una cuenta, desbloquear contenido exclusivo y administrar tus suscripciones.\n\n'
+    '¿Eres nuevo aquí? Crea una contraseña para crear una cuenta, desbloquear contenido exclusivo y administrar tus suscripciones.\n\n'
     '💡 Si necesitas ayuda, contacta con soporte.'
 )
 restoreAccountText = (
@@ -70,6 +73,13 @@ restoreAccountErrorText = (
     'El código de respaldo que ingresaste no es válido. Verifica tu código e intenta nuevamente.\n\n'
     '💡 Si necesitas ayuda, contacta con soporte.'
 )
+boostText = (
+    '<b>🚀 Mejora tu visibilidad</b>\n'
+    '¿Quieres que tus canales y grupos aparezcan más en las recomendaciones?\n\n'
+    '📈 Con la <b>suscripción mensual</b>, tus canales y grupos tendrán un <b>20% más de visibilidad</b> en las recomendaciones de otros usuarios.\n\n'
+    '💡 Ideal para quienes quieren hacer crecer su comunidad más rápido y con mayor alcance.\n\n'
+    '🔓 ¡PRONTO DISPONIBLE!'
+)
 supportText = (
     '<b>📞 Soporte</b>\n'
     '¿Necesitas ayuda? ¡Nuestro equipo de soporte está aquí para ayudarte!\n\n'
@@ -77,8 +87,20 @@ supportText = (
 )
 supportAnswerText = (
     '<b>✅ ¡Tu solicitud ha sido recibida!</b>\n'
-    'Nuestro equipo de soporte se pondrá en contacto contigo pronto para ayudarte con tu problema.\n\n'
-    '⏳ Por favor, espera, te responderemos lo antes posible. ¡Gracias por tu paciencia!'
+    'Nuestro equipo de soporte se pondrá en contacto contigo pronto para ayudarte a resolver el problema.\n\n'
+    '⏳ Por favor, espera. Te responderemos lo antes posible. ¡Gracias por tu paciencia!\n\n'
+    '🆔 ID de tu solicitud: <code>{support_id}</code>. ¡Guarda este mensaje en tus Mensajes Guardados!'
+)
+reportText = (
+    '<b>🚨 Reportar un problema</b>\n'
+    'Si has visto una infracción de las normas o algo sospechoso, por favor repórtalo.\n\n'
+    '📋 Describe la situación con el mayor detalle posible — eso nos ayudará a resolverla más rápido.\n\n'
+    '👮‍♂️ Los moderadores revisarán el {media_type} <b>{channel_name}</b> y tomarán las medidas necesarias.'
+)
+reportAnswerText = (
+    '<b>✅ ¡Tu reporte ha sido recibido!</b>\n'
+    'Gracias por ayudarnos a mantener el orden y la seguridad.\n\n'
+    '🔍 Revisaremos tu reporte en breve.'
 )
 usernameVerifiedText = (
     '<b>✅ ¡Nombre de usuario verificado!</b>\n'
@@ -108,8 +130,14 @@ newPasswordText = (
 )
 accountText = (
     '👤 <b>Nombre de usuario:</b> {username}\n'
-    '📂 <b>Suscripciones:</b> {subscription_count}'
+    '🛡️ <b>Verificación:</b> {verification_status}\n'
+    '📂 <b>Suscripciones:</b> {subscription_count}\n'
+    '💎 <b>Mejora:</b> {boost_status}\n'
 )
+isNotBoostedText = 'no activo ❌'
+isBoostedText = 'activo hasta {boost_date} ✅'
+isNotVerifiedText = 'no verificado ❌'
+isVerifiedText = 'verificado ✅'
 noAccountText = (
     '❌ No se encontró ninguna cuenta.'
 )
@@ -177,72 +205,65 @@ noMediaChooseText = (
     'Por el momento, no hay media para mostrar.'
 )
 mediaSelectionText = (
-    'Seleccione el canal o grupo en el que desea agregar medios:\n\n'
+    'Seleccione el {media_type} en el que desea agregar medios:\n\n'
     'A continuación se muestra una lista de chats donde el bot es administrador.\n'
     'Por favor, pulse el botón correspondiente ⬇️'
 )
 mediaNoChatsText = (
-    'Usted no tiene canales o grupos en los que el bot sea administrador.\n\n'
-    'Para agregar medios, siga los siguientes pasos:\n'
-    '1. Añada el bot al canal o grupo deseado.\n'
+    'Usted no tiene {media_type} en los que el bot sea administrador.\n\n'
+    'Para agregar {media_type}, siga los siguientes pasos:\n'
+    '1. Añada el bot al {media_type} deseado.\n'
     '2. Asigne al bot como administrador.\n'
     'Después de esto, regrese aquí y el chat deseado aparecerá en la lista.'
 )
 addDescriptionText = (
-    '📝 <b>Introduce la descripción del su canal o grupo</b>\n\n'
-    'Por favor, proporciona una breve descripción para su canal o grupo.'
+    '📝 <b>Introduce la descripción del su {media_type}</b>\n\n'
+    'Por favor, proporciona una breve descripción para su {media_type}.'
 )
 descriptionEmptyErrorText = (
-    '❌ <b>La descripción de su canal o grupo no puede estar vacía</b>\n'
-    'Por favor, proporciona una descripción válida para su canal o grupo.'
+    '❌ <b>La descripción de su {media_type} no puede estar vacía</b>\n'
+    'Por favor, proporciona una descripción válida para su {media_type}.'
 )
 descriptionLengthErrorText = (
     '❌ <b>Descripción demasiado larga</b>\n'
     'La descripción debe tener 250 caracteres o menos.'
 )
 addPhotoText = (
-    '📷 <b>Sube una foto de su canal o grupo</b>\n'
-    'Por favor, envía una foto para su canal o grupo.'
+    '📷 <b>Sube una foto de su {media_type}</b>\n'
+    'Por favor, envía una foto para su {media_type}.'
 )
 invalidPhotoErrorText = (
     '❌ <b>Foto no válida</b>\n'
-    'Por favor, envía una foto válida para su canal o grupo.'
+    'Por favor, envía una foto válida para su {media_type}.'
 )
 addPlanText = (
-    '💰 <b>Elige el plan tarifario para tu canal o grupo</b>\n'
-    'Selecciona el plan que deseas aplicar a tu canal o grupo.\n'
-    'Si no deseas establecer un plan, simplemente presiona "SIGUIENTE".'
+    '💰 <b>Elige el plan tarifario para tu {media_type}</b>\n'
+    'Selecciona el plan que deseas aplicar a tu {media_type}.\n'
+    'Si no deseas establecer un plan, simplemente presiona "CONTINUAR️".'
 )
-plan_text = {
-    'plan1': 'por mes',
-    'plan3': 'por 3 meses',
-    'plan6': 'por medio año',
-    'plan12': 'por un año',
-    'plan': 'para siempre'
-}
 addPriceText = (
-    '💰 <b>Establecer precio del plan de su canal o grupo</b>\n'
+    '💰 <b>Establecer precio del plan de su {media_type}</b>\n'
     'Ingresa el precio para el plan {plan_text}.'
 )
 priceEmptyErrorText = (
-    '❌ <b>El precio de su canal o grupo no puede estar vacío</b>\n'
-    'Por favor, envía precio válido de su canal o grupo.'
+    '❌ <b>El precio de su {media_type} no puede estar vacío</b>\n'
+    'Por favor, envía precio válido de su {media_type}.'
 )
 invalidPriceErrorText = (
     '❌ <b>Precio no válido</b>\n'
     'El precio debe ser un número. Ingresa una cantidad válida (ejemplo: 9.99).'
 )
 addMediaErrorText = (
-    '❌ <b>Error al agregar su canal o grupo</b>\n'
-    'Hubo un problema al crear su canal o grupo.'
+    '❌ <b>Error al agregar su {media_type}</b>\n'
+    'Hubo un problema al crear su {media_type}.'
 )
 addCategoryText = (
-    '📂 <b>Selecciona la categoría de tu canal o grupo</b>\n'
-    'Elige una categoría adecuada para clasificar tu contenido.'
+    '📂 <b>Selecciona la categoría de tu {media_type}</b>\n'
+    'Elige una categoría adecuada para clasificar tu {media_type}.'
 )
 addSubcategoryText = (
-    '📂 <b>Selecciona la subcategoría de tu canal o grupo</b>\n'
-    'Elige una subcategoría adecuada para clasificar tu contenido.'
+    '📂 <b>Selecciona la subcategoría de tu {media_type}</b>\n'
+    'Elige una subcategoría adecuada para clasificar tu {media_type}.'
 )
 invalidCategoryText = (
     '❌ <b>Categoría no válida</b>\n'
@@ -250,12 +271,22 @@ invalidCategoryText = (
 )
 startOfListText = 'Ya estás al inicio de la lista'
 endOfListText = 'Ya estás al final de la lista'
-deletedChannelText = 'Media se eliminó correctamente'
+deleteMediaText = '{media_type} se eliminó correctamente'
 restartSessionText = (
     'La sesión ha expirado.\n'
     'Por favor, reinicia desde el principio.'
 )
-alreadyJoinedText = 'Ya estás suscrito a este canal/grupo!'
+alreadyJoinedText = 'Ya estás suscrito a este {media_type}!'
+
+channelType = 'canal'
+groupType = 'grupo'
+plan_text = {
+    'plan1': 'por mes',
+    'plan3': 'por 3 meses',
+    'plan6': 'por medio año',
+    'plan12': 'por un año',
+    'plan': 'para siempre'
+}
 
 categories = {
     '🌟 Popular': [
@@ -368,3 +399,5 @@ addCategoryMedia = r'media\category.png'
 addSubcategoryMedia = r'media\subcategory.png'
 addPriceMedia = r'media\price.png'
 addPlanMedia = r'media\plans.png'
+reportMedia = r'media\default.png'
+boostMedia = r'media\default.png'
