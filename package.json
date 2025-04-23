@@ -1,0 +1,17 @@
+{
+  "name": "deepway",
+  "version": "1.0.0",
+  "description": "<p align=\"center\">\r     An advanced Telegram bot that helps users connect with new people, discover Telegram channels and groups, and buy access to exclusive content. Inspired by popular friend-matching bots, but enhanced with group discovery and monetization features.\r </p>",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@donation-alerts/api": "^4.0.0",
+    "@donation-alerts/events": "^4.0.0",
+    "axios": "^1.8.4"
+  }
+}

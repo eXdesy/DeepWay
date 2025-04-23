@@ -166,8 +166,7 @@ paymentPlanText = (
     'Sigue el enlace para completar el pago y activar tu suscripción.\n\n'
     '<b>{plan} plan</b>\n'
     '💰 Precio: <b>${price}</b>\n\n'
-    'Una vez confirmado el pago, tendrás acceso inmediato a contenido.\n\n'
-    '{link}'
+    'Una vez confirmado el pago, tendrás acceso inmediato a contenido.'
 )
 successfulPaymentText = (
     '✅ <b>¡Pago exitoso!</b>\n'
@@ -205,7 +204,7 @@ noMediaChooseText = (
     'Por el momento, no hay media para mostrar.'
 )
 mediaSelectionText = (
-    'Seleccione el {media_type} en el que desea agregar medios:\n\n'
+    'Seleccione el {media_type} el que desea agregar:\n\n'
     'A continuación se muestra una lista de chats donde el bot es administrador.\n'
     'Por favor, pulse el botón correspondiente ⬇️'
 )
@@ -214,6 +213,7 @@ mediaNoChatsText = (
     'Para agregar {media_type}, siga los siguientes pasos:\n'
     '1. Añada el bot al {media_type} deseado.\n'
     '2. Asigne al bot como administrador.\n'
+    '3. Permitir que el bot agregue nuevos miembros.\n'
     'Después de esto, regrese aquí y el chat deseado aparecerá en la lista.'
 )
 addDescriptionText = (
@@ -401,3 +401,4 @@ addPriceMedia = r'media\price.png'
 addPlanMedia = r'media\plans.png'
 reportMedia = r'media\default.png'
 boostMedia = r'media\default.png'
+addBotMedia = r'media\addBotES.PNG'

@@ -9,6 +9,8 @@ from datetime import datetime, timedelta
 from io import BytesIO
 import asyncio
 from aiogram.dispatcher import FSMContext
+from urllib.parse import urlencode
+import aiohttp
 
 from configs import *
 from handlers.sql_handler import *
@@ -152,7 +154,12 @@ async def menu_(entity, menu_type=None):
             InlineKeyboardButton(text=result.current_language.channelsButton, callback_data='user_media_channels'),
             InlineKeyboardButton(text=result.current_language.groupsButton, callback_data='user_media_groups')
         )
-        markup_inline.row(InlineKeyboardButton(text=result.current_language.boostButton, callback_data='boost'))
+
+        auth_url = await vinculate_DA(telegram_id)
+        markup_inline.row(
+            InlineKeyboardButton("🔗 Подключить Donation Alerts", url=auth_url),
+            InlineKeyboardButton(text=result.current_language.boostButton, callback_data='boost')
+        )
 
     elif menu_type == 'subscriptions' and fetch_user_token(telegram_id):
         update_log_states_data(telegram_id, 'menu_user', 'current_state')
@@ -374,6 +381,7 @@ async def handle_login(message: types.Message):
     media_data = ''
     caption = ''
     token = generate_token(telegram_id, status)
+    donation_alerts_token = ''
 
     if login_state == 'support':
         support_description = message.text
@@ -401,7 +409,7 @@ async def handle_login(message: types.Message):
         username = fetch_log_states_data(telegram_id, 'current_action')
         backup_code = generate_backup_code()
 
-        register_user(telegram_id, username, password, status, verification, backup_code, token, datetime.now())
+        register_user(telegram_id, username, password, status, verification, backup_code, token, donation_alerts_token, datetime.now())
         create_log_users(telegram_id, telegram_id, True, 'register', datetime.now())
 
         await start(message)
@@ -778,7 +786,7 @@ async def create_user_media_(callback_query: types.CallbackQuery):
             caption = result.current_language.mediaNoChatsText.format (
                 media_type= types
             )
-            await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.errorMedia,
+            await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.addBotMedia,
                                             caption,
                                             current_language=result.current_language, back_button=True,
                                             edit_message=True)
@@ -989,15 +997,15 @@ async def handle_media_planes(entity):
         markup_inline.add(
             InlineKeyboardButton(text=result.current_language.continueButton, callback_data='handle_plan_price:next'))
         await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.addPlanMedia,
-                                        caption, markup_inline,
-                                        current_language=result.current_language, delete_message=delete_message,
-                                        back_button=True, edit_message=True, fixed_message_id=result.current_message_id)
+                                        caption, markup_inline=markup_inline, current_language=result.current_language,
+                                        delete_message=delete_message, back_button=True, edit_message=True,
+                                        fixed_message_id=result.current_message_id)
 
     if result.current_state == 'update_user_media_' or result.current_state == 'handle_update_media_planes':
         update_log_states_data(telegram_id, 'update_user_media_', 'current_state')
         await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.addPlanMedia,
-                                        caption, markup_inline=markup_inline,
-                                        current_language=result.current_language, back_button=True, edit_message=True)
+                                        caption, markup_inline=markup_inline,current_language=result.current_language,
+                                        back_button=True, edit_message=True, fixed_message_id=result.current_message_id)
 
 @dp.callback_query_handler(lambda c: c.data and c.data.startswith('handle_plan_price:'), state='*')
 async def handle_plan_price(callback_query: types.CallbackQuery, state: FSMContext):
@@ -1045,9 +1053,9 @@ async def handle_media_price(message: types.Message, state: FSMContext):
         data = await state.get_data()
         selected_plan = data.get('selected_plan')
 
-        if result.current_state == 'create_user_media_':
+        if result.current_state == 'handle_add_media_planes':
             add_media[telegram_id][f'{selected_plan}_price'] = message.text
-        if result.current_state == 'update_user_media_':
+        if result.current_state == 'handle_update_media_planes':
             update_user_media_data(telegram_id, result.current_media_type_id, result.current_media_type,
                                    f'{selected_plan}_price', message.text)
 
@@ -1147,8 +1155,7 @@ async def payment(callback_query: types.CallbackQuery):
     telegram_id = callback_query.from_user.id
     result = await handle_isinstance(callback_query, telegram_id)
     update_log_states_data(telegram_id, 'media_', 'current_state')
-    prices = fetch_media_price(result.current_media_id, result.current_media_type)
-    price_tuple = prices[0]
+    price_tuple  = fetch_media_price(result.current_media_id, result.current_media_type)
     tariffs = {
         'plan1': price_tuple[0],
         'plan3': price_tuple[1],
@@ -1182,7 +1189,6 @@ async def plan_(callback_query: types.CallbackQuery):
     plan_key, plan_price = parts[1], parts[2]
     telegram_id = callback_query.from_user.id
     result = await handle_isinstance(callback_query, telegram_id)
-    update_log_states_data(telegram_id, f'payment_{result.current_media_id}', 'current_state')
 
     plan = {
         'plan1': result.current_language.monthPaymentPlanButton,
@@ -1193,21 +1199,33 @@ async def plan_(callback_query: types.CallbackQuery):
     }
 
     if fetch_user_token(telegram_id):
-        # description = f'Payment with telegram_id: {telegram_id}'
-        # donation_link = await create_donation_link(plan_price, description)
+        donation_link = await create_donation_link(callback_query, plan_price)
+        media_owner_id = fetch_media_owner(result.current_media_id, result.current_media_type)
+
+        if donation_link:
+            add_pending_payment(
+            buyer_id=telegram_id,
+            owner_id=media_owner_id,
+            media_id=result.current_media_id,
+            media_type=result.current_media_type,
+            plan_key=plan_key,
+            created_date=datetime.now()
+            )
 
         caption = result.current_language.paymentPlanText.format(
             plan=plan[plan_key],
-            price=plan_price,
-            # link=donation_link
+            price=plan_price
         )
+
         markup_inline = InlineKeyboardMarkup()
         markup_inline.add(
+            InlineKeyboardButton("🔗 ОПЛАТИТЬ", url=donation_link),
             InlineKeyboardButton(text=result.current_language.checkPaymentButton, callback_data=f'check_payment_{plan_key}')
         )
         await edit_entity_message_media(result.chat_id, result.message_id, result.current_language.paymentMedia,
                                         caption, markup_inline=markup_inline, current_language=result.current_language,
                                         back_button=True, edit_message=True)
+        update_log_states_data(telegram_id, f'payment_{result.current_media_id}', 'current_state')
     else:
         await start(callback_query)
 
@@ -1217,14 +1235,70 @@ async def check_payment_(callback_query: types.CallbackQuery):
     telegram_id = callback_query.from_user.id
     result = await handle_isinstance(callback_query, telegram_id)
 
-    # donation_found = await check_donation_alert(telegram_id)
-    donation_found = True
+    donation_found = await check_donation_alert(telegram_id, result.current_media_id, result.current_media_type)
 
     if donation_found:
         await successful_payment_(callback_query, plan_key)
         await callback_query.answer(result.current_language.paymentAcceptedText, show_alert=True)
     else:
         await unsuccessful_payment(callback_query)
+
+@dp.callback_query_handler(Text(equals='create_donation_link'))
+async def create_donation_link(entity, amount: float) -> str:
+    telegram_id = entity.from_user.id
+    result = await handle_isinstance(entity, telegram_id)
+
+    username = None
+    access_token = fetch_donation_alerts_token(result.current_media_id, result.current_media_type)
+    if not access_token:
+        await entity.answer("⚠️ Error: media's owner access token not found", show_alert=True)
+        return
+
+    url = "https://www.donationalerts.com/api/v1/user/oauth"
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp:
+            if resp.status == 200:
+                data = await resp.json()
+                username = data["data"]["code"]
+
+    if username:
+        return f"https://www.donationalerts.com/r/{username}?amount={amount}&message=telegram_id:{telegram_id}"
+    else:
+        await entity.answer("⚠️ Error: media's owner username not found", show_alert=True)
+        return
+
+async def check_donation_alert(telegram_id: int, media_id: int, media_type: str) -> bool:
+    access_token = fetch_donation_alerts_token(media_id, media_type)
+    if not access_token:
+        return False
+
+    url = "https://www.donationalerts.com/api/v1/alerts/donations"
+    headers = {
+        "Authorization": f"Bearer {access_token}"
+    }
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    donations = data.get("data", [])
+
+                    for donation in donations:
+                        comment = donation.get("message", "")
+                        date = donation.get("created_at")
+                        if f"telegram_id:{telegram_id}" in comment:
+                            dt = datetime.fromisoformat(date.replace("Z", "+00:00"))
+                            if datetime.utcnow() - dt < timedelta(minutes=15):
+                                return True
+    except Exception as e:
+        print(f"Ошибка при проверке доната: {e}")
+
+    return False
+
 
 @dp.callback_query_handler(Text(startswith='successful_payment_'))
 async def successful_payment_(callback_query: types.CallbackQuery, plan_key=None):
@@ -1377,6 +1451,17 @@ async def my_chat_member_handler(update: types.ChatMemberUpdated):
     except Exception as e:
         db_connection.rollback()
         print(f'# Error while updating status for the chat {media_id}: {e}')
+
+async def vinculate_DA(telegram_id):
+    query = urlencode({
+        "client_id": CLIENT_ID,
+        "redirect_uri": REDIRECT_URI,
+        "response_type": "code",
+        "scope": "oauth-user-show oauth-donation-index",
+        "state": f"telegram_id:{telegram_id}"
+    })
+    auth_url = f"https://www.donationalerts.com/oauth/authorize?{query}"
+    return auth_url
 
 async def handle_isinstance(entity, telegram_id):
     chat_id = None

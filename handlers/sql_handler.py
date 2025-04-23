@@ -33,6 +33,13 @@ def fetch_user_token(telegram_id):
     result = cursor.fetchone()
     return result[0] if result else False
 
+def fetch_donation_alerts_token(media_id, media_type):
+    cursor.execute(f'''SELECT u.donation_alerts_token FROM `{media_type}` AS m JOIN `users` AS u 
+                    ON m.owner_id = u.current_telegram_id WHERE m.media_id = %s''',
+                   (media_id,))
+    result = cursor.fetchone()
+    return result[0] if result else False
+
 def fetch_user_telegram_id(username, cell_data, cell):
     cursor.execute(f'SELECT telegram_id FROM `users` WHERE username = %s AND {cell} = %s',
                    (username, cell_data))
@@ -45,11 +52,11 @@ def verify_user(telegram_id):
     result = cursor.fetchone()
     return result[0] if result else False
 
-def register_user(telegram_id, username, password, status, verification, backup_code, token, created_date):
+def register_user(telegram_id, username, password, status, verification, backup_code, token, donation_alerts_token, created_date):
     cursor.execute('''
-        INSERT INTO users (telegram_id, current_telegram_id, username, password, status, verification, backup_code, token, created_date) 
+        INSERT INTO users (telegram_id, current_telegram_id, username, password, status, verification, backup_code, token, donation_alerts_token, created_date) 
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)''',
-                   (telegram_id, telegram_id, username, password, status, verification, backup_code, token, created_date))
+                   (telegram_id, telegram_id, username, password, status, verification, backup_code, token, donation_alerts_token, created_date))
     db_connection.commit()
     return
 
@@ -175,6 +182,12 @@ def fetch_media_price(media_id, media_type):
     result = cursor.fetchone()
     return result
 
+def fetch_media_owner(media_id, media_type):
+    cursor.execute(f'SELECT owner_id FROM `{media_type}` WHERE media_id = %s',
+                   (media_id,))
+    result = cursor.fetchone()
+    return result
+
 # user media
 def fetch_user_media(telegram_id, media_type, media_id):
     cursor.execute(f'SELECT * FROM `{media_type}` WHERE media_id = %s AND owner_id = %s',
@@ -236,17 +249,17 @@ def count_user_subscriptions(telegram_id):
     result = cursor.fetchone()
     return result
 
-# reports_media
+# reports
 def create_media_report(reporter_telegram_id, username, media_id, report_description, media_type, created_date):
     cursor.execute('''
-        INSERT INTO `reports_media` (reporter_telegram_id, username, media_id, report_description, media_type, report_status, created_date) 
+        INSERT INTO `reports` (reporter_telegram_id, username, media_id, report_description, media_type, report_status, created_date) 
         VALUES (%s, %s, %s, %s, %s, %s, %s)''',
                    (reporter_telegram_id, username, media_id, report_description, media_type, 'PROCESSING', created_date))
     db_connection.commit()
     return
 
 def count_media_report_status(media_id, report_status):
-    cursor.execute('SELECT COUNT(*) FROM reports_media WHERE media_id = %s AND report_status = %s',
+    cursor.execute('SELECT COUNT(*) FROM reports WHERE media_id = %s AND report_status = %s',
                    (media_id, report_status))
     result = cursor.fetchone()
     return result[0] if result else 0
@@ -273,9 +286,8 @@ def verify_log_media(media_id):
 
 # support
 def create_support_request(telegram_id, username, description, created_date):
-    cursor.execute('''
-        INSERT INTO supports (telegram_id, username, description, support_status, created_date) 
-        VALUES (%s, %s, %s, %s, %s)''',
+    cursor.execute('''INSERT INTO supports (telegram_id, username, description, support_status, created_date) 
+                    VALUES (%s, %s, %s, %s, %s)''',
                    (telegram_id, username, description, 'PROCESSING', created_date))
     db_connection.commit()
     return
@@ -285,6 +297,13 @@ def fetch_support_id(telegram_id):
                    (telegram_id,))
     result = cursor.fetchone()
     return result[0] if result else 0
+
+# payments
+def add_pending_payment(buyer_id, owner_id, media_id, media_type, plan_key, created_date):
+    cursor.execute('''INSERT INTO payments (buyer_id, owner_id, media_id, media_type, plan_key, created_date)
+                    VALUES (%s, %s, %s, %s, %s)''',
+                    (buyer_id, owner_id, media_id, media_type, plan_key, created_date))
+    db_connection.commit()
 
 # Recommendations
 def fetch_user_subscription_category(telegram_id, media_type):
@@ -315,7 +334,7 @@ def count_media_subscriptions(media_type):
 def count_media_reports(media_type):
     cursor.execute(f'''
         SELECT media_id, COUNT(report_media_id) AS total_reports
-        FROM reports_media
+        FROM reports
         WHERE media_type = %s AND report_status = 'ALERT'
         GROUP BY media_id''', (media_type,))
     result = cursor.fetchall()

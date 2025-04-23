@@ -12,6 +12,8 @@
 <a href="https://pypi.org/project/mysql-connector-python/" target="_blank"><img src="https://img.shields.io/badge/MySQLConnector-9.2-orange" alt="mysql-connector-python 9.2" /></a>
 <a href="https://pypi.org/project/cryptography/" target="_blank"><img src="https://img.shields.io/badge/Cryptography-44.2-red" alt="cryptography 44.0.2" /></a>
 <a href="https://www.jetbrains.com/pycharm/" target="_blank"><img src="https://img.shields.io/badge/IDE-PyCharm-brightgreen" alt="PyCharm" /></a>
+<a href="https://nodejs.org/en" target="_blank"><img src="https://img.shields.io/badge/Node.js-21.7.3-brightgreen" alt="Node.js 21.7.3" /></a>
+<a href="https://www.npmjs.com/" target="_blank"><img src="https://img.shields.io/badge/npm-10.5.0-red" alt="npm 10.5.0" /></a>
 </p>
 
 ![Deepway](/banner.jpg)
@@ -24,6 +26,7 @@
 - **🔐 Private Media:** Mark groups/channels as private and restrict access.
 - **💸 Access Marketplace:** Users can purchase access to selected private channels/groups.
 - **🔐 Secure Data:** Uses `cryptography` for secure token handling and sensitive operations.
+- **📥 Donation Alerts Integration:** Accept payments via Donation Alerts with webhook + WS architecture.
 
 ---
 
@@ -54,7 +57,21 @@
     pip install -r requirements.txt
     ```
 
-4. **Configure Environment Variables:**
+4. **Install Node.js and npm:**
+    - Download: https://nodejs.org/en
+    - Required versions:
+      - Node.js: 21.7.3
+      - npm: 10.5.0
+
+
+5. **Install Node.js and Packages:**
+
+    ```bash
+    npm init -y
+    npm install @donation-alerts/api @donation-alerts/events axios
+    ```
+
+6. **Configure Environment Variables:**
 
     Create a `.env` file and set the following variables:
 
@@ -66,12 +83,17 @@
     DB_USER=your_user
     DB_PASSWORD=your_password
     DB_NAME=your_database
+    DONATIONALERTS_CLIENT_ID=your_donation_alerts_app_client_id
+    DONATIONALERTS_CLIENT_SECRET=your_donation_alerts_app_secret_token
+    REDIRECT_URI=your_url_to_back
+    TELEGRAM_WEBHOOK=your_url_to_webhook_api
     ```
 
 5. **Run the Bot:**
 
     ```bash
     python main.py
+    uvicorn fastapi:app --reload
     ```
 
 ---
@@ -102,6 +124,13 @@ The **Deepway** integrates the following components:
 - Available languages: **English (US, UK)**, **Spanish (ES)**, **Russian (RU)**.  
 - Easy to extend with new languages in `languages/`.
 
+### 💰 Donation Alerts Integration
+
+- Users connect DA account once (OAuth2).
+- System generates donation links for *content owners*.
+- WebSocket + FastAPI webhook track incoming payments.
+- Telegram users receive access automatically.
+
 ---
 
 ## 🧩 Features in Detail
@@ -118,6 +147,9 @@ The **Deepway** integrates the following components:
   - Some groups/channels marked as "paid access."
   - Payment logic can be integrated via Telegram's `payments` or third-party services.
 
+- **Webhooks & WS:** 
+  - Payment tracking in real-time with `@donation-alerts/api`.
+
 ---
 
 ## 💡 Notes
@@ -125,6 +157,9 @@ The **Deepway** integrates the following components:
 - Bot requires a running **MySQL 8+ server**.
 - All user data is stored in a structured and encrypted manner.
 - The system is modular and easy to expand with new features.
+- Requires Node.js and compatible npm.
+- Each content owner needs to authorize DA account.
+- Node.js microservice required per DA owner or centralized via WebSocket multiplexing.
 
 ---
 

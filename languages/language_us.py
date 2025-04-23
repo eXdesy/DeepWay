@@ -166,8 +166,7 @@ paymentPlanText = (
     'Please follow the link to complete your payment and activate your subscription.\n\n'
     '<b>{plan} Plan</b>\n'
     '💰 Price: <b>${price}</b>\n\n'
-    'Once the payment is confirmed, you will receive immediate access to content.\n\n'
-    '{link}'
+    'Once the payment is confirmed, you will receive immediate access to content.'
 )
 successfulPaymentText = (
     '✅ <b>Successful payment!</b>\n'
@@ -205,7 +204,7 @@ noMediaChooseText = (
     'There is currently no media to display.'
 )
 mediaSelectionText = (
-    'Select the {media_type} where you want to add media:\n\n'
+    'Select the {media_type} which you want to add:\n\n'
     'Below is a list of chats where the bot is an administrator.\n'
     'Please click on the appropriate button ⬇️'
 )
@@ -214,6 +213,7 @@ mediaNoChatsText = (
     'To add {media_type}, please follow these steps:\n'
     '1. Add the bot to the desired {media_type}.\n'
     '2. Make the bot an administrator.\n'
+    '3. Allow the bot to add new members.\n'
     'After that, come back here, and the desired chat will appear in the list.'
 )
 addDescriptionText = (
@@ -401,3 +401,4 @@ addPriceMedia = r'media\price.png'
 addPlanMedia = r'media\plans.png'
 reportMedia = r'media\default.png'
 boostMedia = r'media\default.png'
+addBotMedia = r'media\addBotUS.PNG'

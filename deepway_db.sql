@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS `users` (
     `verification` BOOLEAN,
     `backup_code` VARCHAR(25),
     `token` VARCHAR(255),
+    `donation_alerts_token` TEXT,
     `created_date` TIMESTAMP DEFAULT NOW(),
     UNIQUE (`telegram_id`)
 );
@@ -92,6 +93,16 @@ CREATE TABLE IF NOT EXISTS `groups` (
     FOREIGN KEY (owner_id) REFERENCES users(telegram_id)
 );
 
+CREATE TABLE payments (
+    `payment_id` INT AUTO_INCREMENT PRIMARY KEY,
+    `buyer_id` BIGINT NOT NULL,
+    `owner_id` BIGINT NOT NULL,
+    `media_id` INT NOT NULL,
+    `media_type` VARCHAR(50) NOT NULL,
+    `plan_key` VARCHAR(20) NOT NULL,
+    `created_date` TIMESTAMP DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS `supports` (
     `support_id` INT AUTO_INCREMENT PRIMARY KEY,
     `telegram_id` BIGINT,
@@ -102,7 +113,7 @@ CREATE TABLE IF NOT EXISTS `supports` (
     `closed_date` TIMESTAMP DEFAULT NULL
 );
 
-CREATE TABLE IF NOT EXISTS `reports_media` (
+CREATE TABLE IF NOT EXISTS `reports` (
     `report_media_id` INT AUTO_INCREMENT PRIMARY KEY,
     `reporter_telegram_id` BIGINT,
     `username` VARCHAR(255),

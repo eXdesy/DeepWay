@@ -13,6 +13,10 @@ bot = Bot(token=BOT_TOKEN)
 storage = MemoryStorage()
 dp = Dispatcher(bot, storage=storage)
 
+CLIENT_ID = os.getenv("DONATIONALERTS_CLIENT_ID")
+CLIENT_SECRET = os.getenv("DONATIONALERTS_CLIENT_SECRET")
+REDIRECT_URI = os.getenv("REDIRECT_URI")
+
 usButton = 'ENGLISH 🇺🇸'
 ruButton = 'РУССКИЙ 🇷🇺'
 esButton = 'ESPAÑOL 🇪🇸'
