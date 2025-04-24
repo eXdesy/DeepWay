@@ -92,8 +92,8 @@
 5. **Run the Bot:**
 
     ```bash
-    python main.py
-    uvicorn fastapi:app --reload
+    python bot.py
+    uvicorn fastapi_app:app --reload
     ```
 
 ---

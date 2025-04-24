@@ -1,12 +1,19 @@
-from fastapi import FastAPI, Request
+# © 2025 eXdesy — All rights reserved.
+# This code is for educational use only.
+# Do not reuse, copy, modify, or redistribute.
+import os
 import aiohttp
-
 from aiogram import types
-from configs import *
-from main import successful_payment_, unsuccessful_payment, cursor, db_connection
-from handlers.sql_handler import update_user_data
+from fastapi import FastAPI, Request
+
+from bot_handlers.payment_handler import successful_payment_, unsuccessful_payment
+from handlers.sql_handler import update_user_data, cursor, db_connection
 
 app = FastAPI()
+
+CLIENT_ID = os.getenv("DONATIONALERTS_CLIENT_ID")
+CLIENT_SECRET = os.getenv("DONATIONALERTS_CLIENT_SECRET")
+REDIRECT_URI = os.getenv("REDIRECT_URI")
 
 @app.get("/callback")
 async def oauth_callback(request: Request):

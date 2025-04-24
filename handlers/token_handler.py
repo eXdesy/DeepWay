@@ -2,13 +2,14 @@
 # This code is for educational use only.
 # Do not reuse, copy, modify, or redistribute.
 import os
-from dotenv import load_dotenv
 import random
 import string
+from dotenv import load_dotenv
 from cryptography.fernet import Fernet
 
 load_dotenv()
 FERNET_TOKEN = os.getenv('FERNET_TOKEN')
+
 fernet = Fernet(FERNET_TOKEN.encode())
 
 def generate_token(telegram_id: int, status: str) -> str:

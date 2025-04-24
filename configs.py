@@ -2,30 +2,16 @@
 # This code is for educational use only.
 # Do not reuse, copy, modify, or redistribute.
 import os
+import logging
 from dotenv import load_dotenv
-from aiogram import Bot
-from aiogram import Dispatcher
+from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 
 load_dotenv()
+logging.basicConfig()
 BOT_TOKEN = os.getenv('BOT_TOKEN')
-bot = Bot(token=BOT_TOKEN)
+
 storage = MemoryStorage()
+bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher(bot, storage=storage)
 
-CLIENT_ID = os.getenv("DONATIONALERTS_CLIENT_ID")
-CLIENT_SECRET = os.getenv("DONATIONALERTS_CLIENT_SECRET")
-REDIRECT_URI = os.getenv("REDIRECT_URI")
-
-usButton = 'ENGLISH 🇺🇸'
-ruButton = 'РУССКИЙ 🇷🇺'
-esButton = 'ESPAÑOL 🇪🇸'
-uaButton = 'УКРАЇНСЬКА 🇺🇦'
-languageMenuText = (
-    '🇺🇸 Choose your the language\n'
-    '🇷🇺 Выберите свой язык\n'
-    '🇪🇸 Elige tu idioma\n'
-    '🇺🇦 Оберіть свою мову\n\n'
-    '💡 You can change the language anytime in the settings.'
-)
-languageMenuMedia = r'media\language.png'
